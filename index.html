@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>GD Skillset Browser</title>
+
+<script src="https://www.gstatic.com/charts/loader.js"></script>
+
+<style>
+
+*{
+box-sizing:border-box;
+scroll-behavior:smooth;
+}
+
+body{
+margin:0;
+min-height:100vh;
+
+display:flex;
+justify-content:center;
+align-items:center;
+
+background:
+linear-gradient(
+135deg,
+#4facfe,
+#00c6ff,
+#6a5cff
+);
+
+font-family:Arial,sans-serif;
+
+overflow-x:hidden;
+position:relative;
+padding:30px;
+}
+
+/* background decorations */
+
+body::before{
+content:"";
+position:fixed;
+
+width:350px;
+height:350px;
+
+border-radius:50%;
+
+top:-120px;
+left:-80px;
+
+background:
+rgba(255,255,255,.15);
+
+filter:blur(10px);
+}
+
+body::after{
+content:"";
+position:fixed;
+
+width:420px;
+height:420px;
+
+bottom:-160px;
+right:-120px;
+
+border-radius:50%;
+
+background:
+rgba(255,255,255,.1);
+
+filter:blur(15px);
+}
+
+.page{
+
+display:flex;
+flex-direction:column;
+align-items:center;
+
+gap:25px;
+
+width:100%;
+}
+
+/* card */
+
+.welcome-box{
+
+width:500px;
+
+padding:35px;
+
+border-radius:30px;
+
+background:
+rgba(255,255,255,.16);
+
+backdrop-filter:
+blur(18px);
+
+border:
+1px solid
+rgba(255,255,255,.25);
+
+box-shadow:
+0 10px 35px
+rgba(
+0,
+0,
+0,
+0.25
+);
+
+text-align:center;
+
+transition:.3s;
+}
+
+.welcome-box:hover{
+
+transform:
+translateY(-4px);
+
+}
+
+h1{
+
+margin-top:0;
+
+font-size:38px;
+
+color:white;
+
+text-shadow:
+0 2px 10px
+rgba(
+0,
+0,
+0,
+0.2
+);
+
+}
+
+.subtitle{
+
+color:white;
+
+opacity:.9;
+
+line-height:1.5;
+
+margin-bottom:20px;
+}
+
+select,input{
+
+width:90%;
+
+padding:14px;
+
+margin:10px;
+
+border:none;
+
+border-radius:15px;
+
+background:
+rgba(
+255,
+255,
+255,
+0.9
+);
+
+font-size:15px;
+
+outline:none;
+
+transition:.25s;
+}
+
+select:focus,
+input:focus{
+
+transform:
+scale(1.03);
+
+}
+
+button{
+
+padding:
+13px 30px;
+
+border:none;
+
+border-radius:15px;
+
+font-size:16px;
+
+font-weight:bold;
+
+cursor:pointer;
+
+color:white;
+
+background:
+linear-gradient(
+45deg,
+#2f80ed,
+#56ccf2
+);
+
+box-shadow:
+0 5px 20px
+rgba(
+0,
+0,
+0,
+.2
+);
+
+transition:.25s;
+}
+
+button:hover{
+
+transform:
+scale(1.08);
+
+}
+
+.chart-container{
+
+display:none;
+
+background:white;
+
+padding:20px;
+
+border-radius:25px;
+
+box-shadow:
+0 10px 30px
+rgba(
+0,
+0,
+0,
+0.2
+);
+
+}
+
+.stats{
+
+margin-top:15px;
+
+color:#777;
+
+font-size:13px;
+
+}
+
+/* QUESTION MARK BUTTON */
+
+.about-btn{
+
+position:fixed;
+
+top:20px;
+right:20px;
+
+width:55px;
+height:55px;
+
+display:flex;
+justify-content:center;
+align-items:center;
+
+border-radius:50%;
+
+text-decoration:none;
+
+font-size:28px;
+font-weight:bold;
+
+color:white;
+
+background:
+linear-gradient(
+45deg,
+#2f80ed,
+#56ccf2
+);
+
+box-shadow:
+0 5px 20px
+rgba(
+0,
+0,
+0,
+0.25
+);
+
+transition:.25s;
+
+z-index:999;
+}
+
+.about-btn:hover{
+
+transform:
+scale(1.12)
+rotate(8deg);
+
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- QUESTION MARK BUTTON -->
+
+<a href="about.html" class="about-btn">
+
+?
+
+</a>
+
+<div class="page">
+
+<div class="welcome-box">
+
+<h1>Welcome!</h1>
+
+<p class="subtitle">
+
+Geometry Dash Skillset Browser
+
+<br><br>
+
+Choose a difficulty and search for a level
+
+</p>
+
+<select
+id="difficulty"
+onchange="updateLevels()">
+
+<option value="" selected disabled>
+Select Difficulty
+</option>
+
+<option>Easy Demon</option>
+<option>Medium Demon</option>
+<option>Hard Demon</option>
+<option>Insane Demon</option>
+<option>Extreme Demon</option>
+
+</select>
+
+<input
+type="text"
+id="searchBox"
+placeholder="Search level..."
+onkeyup="filterLevels()">
+
+<select id="levels">
+
+<option value="" selected disabled>
+
+Select Level
+
+</option>
+
+</select>
+
+<br><br>
+
+<button onclick="go()">
+
+Show Skillset
+
+</button>
+
+</div>
+
+<div
+class="chart-container"
+id="chartContainer">
+
+<div id="piechart"></div>
+
+<div class="stats">
+
+Skillset visualizer
+
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+google.charts.load(
+'current',
+{'packages':['corechart']}
+);
+
+const levelData={
+
+"Easy Demon":[
+"Clubstep",
+"Theory of Everything 2",
+"Deadlocked",
+"The Nightmare",
+"THE LIGHTNING ROAD",
+"Platinum Adventure",
+"Xstep v2",
+"iSpyWithMyLittleEye",
+"Speed Racer",
+"X"
+],
+
+"Medium Demon":[
+"Maffstep",
+"B",
+"Mechanical Showdown"
+],
+
+"Hard Demon":[
+"Nine Circles"
+],
+
+"Insane Demon":[
+"Windy Landscape"
+],
+
+"Extreme Demon":[
+"Bloodbath",
+"Acheron"
+]
+
+};
+
+const chartData={
+
+"Clubstep":{
+
+creator:"RobTop",
+
+stats:[
+
+['Category','Amount'],
+
+['Cube',69],
+['Ship',1516],
+['Ball',27],
+['UFO',667],
+['Wave',0],
+['Robot',0],
+['Spider',0],
+['Swing',0],
+['Nerve Control',778],
+['Memory',321],
+['Learny',266],
+['Duals',0],
+['Chokepoints',529],
+['High CPS',0],
+['Timings',90],
+['Flow',0],
+['Overall',116],
+['Gimmicky',0],
+['Fast-Paced',0],
+['Slow-Paced',42]
+
+]
+
+},
+
+"THE LIGHTNING ROAD":{
+
+creator:"timeless real",
+
+stats:[
+
+['Category','Amount'],
+
+['Cube',99],
+['Ship',35],
+['Ball',74],
+['UFO',0],
+['Wave',0],
+['Robot',0],
+['Spider',0],
+['Swing',0],
+['Nerve Control',22],
+['Memory',772],
+['Learny',462],
+['Duals',0],
+['Chokepoints',117],
+['High CPS',0],
+['Timings',24],
+['Flow',0],
+['Overall',231],
+['Gimmicky',47],
+['Fast-Paced',0],
+['Slow-Paced',37]
+
+]
+
+}
+
+};
+
+function updateLevels(){
+
+let difficulty=
+document
+.getElementById(
+"difficulty"
+)
+.value;
+
+let levelSelect=
+document
+.getElementById(
+"levels"
+);
+
+levelSelect.innerHTML="";
+
+let first=
+document.createElement(
+"option"
+);
+
+first.text=
+"-- Select Level --";
+
+first.value="";
+
+first.disabled=true;
+
+first.selected=true;
+
+levelSelect.add(first);
+
+if(
+!levelData[difficulty]
+)return;
+
+levelData[difficulty]
+.forEach(level=>{
+
+let option=
+document.createElement(
+"option"
+);
+
+option.textContent=
+level;
+
+option.value=
+level;
+
+levelSelect
+.appendChild(
+option
+);
+
+});
+
+}
+
+function filterLevels(){
+
+let search=
+
+document
+.getElementById(
+"searchBox"
+)
+
+.value
+
+.toLowerCase();
+
+let difficulty=
+
+document
+.getElementById(
+"difficulty"
+)
+
+.value;
+
+let levelSelect=
+
+document
+.getElementById(
+"levels"
+);
+
+levelSelect.innerHTML="";
+
+if(
+!levelData[difficulty]
+)return;
+
+levelData[difficulty]
+
+.filter(level=>
+
+level
+.toLowerCase()
+.includes(search)
+
+)
+
+.forEach(level=>{
+
+let option=
+
+document
+.createElement(
+"option"
+);
+
+option.textContent=
+level;
+
+option.value=
+level;
+
+levelSelect
+.appendChild(
+option
+);
+
+});
+
+}
+
+function go(){
+
+let level=
+
+document
+.getElementById(
+"levels"
+)
+
+.value;
+
+if(
+!chartData[level]
+)return;
+
+document
+.getElementById(
+"chartContainer"
+)
+.style.display=
+"block";
+
+let data=
+
+google
+.visualization
+.arrayToDataTable(
+
+chartData[level]
+.stats
+
+);
+
+let options={
+
+title:
+
+"Skillset Profile: "
+
++level+
+
+" | Creator: "
+
++chartData[level]
+.creator,
+
+width:900,
+height:700,
+
+colors:[
+
+'#3366CC',
+'#DC3912',
+'#FF9900',
+'#109618',
+'#990099',
+'#0099C6',
+'#DD4477',
+'#66AA00',
+'#B82E2E',
+'#316395',
+'#994499',
+'#22AA99',
+'#AAAA11',
+'#6633CC',
+'#E67300',
+'#8B0707',
+'#651067',
+'#329262',
+'#5574A6',
+'#3B3EAC'
+
+]
+
+};
+
+let chart=
+
+new google
+.visualization
+.PieChart(
+
+document
+.getElementById(
+"piechart"
+)
+
+);
+
+chart.draw(
+data,
+options
+);
+
+}
+
+</script>
+
+</body>
+</html>
